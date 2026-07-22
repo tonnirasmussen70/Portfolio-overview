@@ -605,7 +605,7 @@ with positions_tab:
     st.subheader("Samlet positionstabel")
 
     display_columns = [
-        "Asset_type", "Name", "Ticker", "Quantity", "Purchase_price", "Current_price",
+        "Asset_type", "Name", "Quantity", "Purchase_price", "Current_price",
         "Currency", "Market_Value_DKK", "Cost_Value_DKK", "Return_DKK", "Return_Pct",
         "Portfolio_Weight", "Sector", "Account",
     ]
