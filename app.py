@@ -305,35 +305,128 @@ except Exception as exc:
 # ---------------------------------------------------------
 st.sidebar.header("Filtre")
 
-asset_filter = st.sidebar.radio(
-    "Aktivtype",
-    ["Alle", "Stock", "ETF"],
-    key="asset_type_filter",
+st.sidebar.subheader("Filtre")
+
+# ---------- Aktivtype ----------
+asset_options = ["Stock", "ETF"]
+asset_counts = (
+    securities_all["Asset_type"]
+    .astype(str)
+    .value_counts()
+    .to_dict()
 )
 
-account_options = sorted(securities_all["Account"].dropna().astype(str).unique().tolist())
-account_filter = st.sidebar.radio(
-    "Depot/konto",
-    ["Alle"] + account_options,
-    key="account_filter",
+for option in asset_options:
+    key = f"filter_asset_{option}"
+    if key not in st.session_state:
+        st.session_state[key] = True
+
+st.sidebar.markdown("**Aktivtype**")
+asset_col1, asset_col2 = st.sidebar.columns(2)
+
+if asset_col1.button("Vælg alle", key="asset_select_all", use_container_width=True):
+    for option in asset_options:
+        st.session_state[f"filter_asset_{option}"] = True
+    st.rerun()
+
+if asset_col2.button("Ryd", key="asset_clear_all", use_container_width=True):
+    for option in asset_options:
+        st.session_state[f"filter_asset_{option}"] = False
+    st.rerun()
+
+selected_asset_types = []
+for option in asset_options:
+    count = int(asset_counts.get(option, 0))
+    if st.sidebar.checkbox(
+        f"{option} ({count})",
+        key=f"filter_asset_{option}",
+    ):
+        selected_asset_types.append(option)
+
+# ---------- Depot/konto ----------
+account_options = sorted(
+    securities_all["Account"]
+    .dropna()
+    .astype(str)
+    .unique()
+    .tolist()
+)
+account_counts = (
+    securities_all["Account"]
+    .dropna()
+    .astype(str)
+    .value_counts()
+    .to_dict()
 )
 
-sector_options = sorted(securities_all["Sector"].dropna().unique().tolist())
+for option in account_options:
+    key = f"filter_account_{option}"
+    if key not in st.session_state:
+        st.session_state[key] = True
+
+st.sidebar.markdown("**Depot/konto**")
+account_col1, account_col2 = st.sidebar.columns(2)
+
+if account_col1.button("Vælg alle", key="account_select_all", use_container_width=True):
+    for option in account_options:
+        st.session_state[f"filter_account_{option}"] = True
+    st.rerun()
+
+if account_col2.button("Ryd", key="account_clear_all", use_container_width=True):
+    for option in account_options:
+        st.session_state[f"filter_account_{option}"] = False
+    st.rerun()
+
+selected_accounts = []
+for option in account_options:
+    count = int(account_counts.get(option, 0))
+    if st.sidebar.checkbox(
+        f"{option} ({count})",
+        key=f"filter_account_{option}",
+    ):
+        selected_accounts.append(option)
+
+# ---------- Sektor ----------
+sector_options = sorted(
+    securities_all["Sector"]
+    .dropna()
+    .astype(str)
+    .unique()
+    .tolist()
+)
 selected_sectors = st.sidebar.multiselect(
     "Sektor",
     sector_options,
     default=sector_options,
+    key="sector_filter",
 )
 
+# ---------- Anvend filtre ----------
 filtered = securities_all.copy()
 
-if asset_filter != "Alle":
-    filtered = filtered[filtered["Asset_type"].eq(asset_filter)]
+filtered = filtered[
+    filtered["Asset_type"].astype(str).isin(selected_asset_types)
+]
 
-if account_filter != "Alle":
-    filtered = filtered[filtered["Account"].astype(str).eq(account_filter)]
+filtered = filtered[
+    filtered["Account"].astype(str).isin(selected_accounts)
+]
 
-filtered = filtered[filtered["Sector"].isin(selected_sectors)]
+filtered = filtered[
+    filtered["Sector"].astype(str).isin(selected_sectors)
+]
+
+if not selected_asset_types:
+    st.sidebar.warning("Ingen aktivtyper er valgt.")
+
+if not selected_accounts:
+    st.sidebar.warning("Ingen depoter/konti er valgt.")
+
+if filtered.empty:
+    st.warning(
+        "Ingen positioner matcher de valgte filtre. "
+        "Vælg mindst én aktivtype og mindst ét depot."
+    )
 
 st.sidebar.divider()
 st.sidebar.caption(f"Datakilde: {DATA_FILE.name} · fane: {SHEET_NAME}")
@@ -647,4 +740,4 @@ with quality_tab:
         st.dataframe(raw_display, use_container_width=True, hide_index=True)
 
 st.divider()
-st.caption("Version 1.3 · Radiofilter for aktivtype og depot/konto · Datakilde: AI_portfolio.xlsx")
+st.caption("Version 2.0 · Fleksible inkluder/ekskluder-filtre · Datakilde: AI_portfolio.xlsx")
