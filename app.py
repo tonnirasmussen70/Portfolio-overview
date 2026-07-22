@@ -561,7 +561,7 @@ with overview_tab:
                         alt.Tooltip("Market_Value_DKK:Q", title="Værdi", format=",.0f"),
                     ],
                 )
-                .properties(height=300)
+                .properties(height=600)
             )
             st.altair_chart(donut, use_container_width=True)
 
