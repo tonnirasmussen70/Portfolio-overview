@@ -646,7 +646,7 @@ with allocation_tab:
                     alt.Tooltip("Weight:Q", title="Vægt", format=".0%"),
                 ],
             )
-            .properties(height=430)
+            .properties(height=800)
         )
         st.altair_chart(sector_chart, use_container_width=True)
 
