@@ -611,7 +611,7 @@ with positions_tab:
     ]
     display_numeric = filtered[[column for column in display_columns if column in filtered.columns]].copy()
     display = format_position_table(display_numeric)
-    st.dataframe(display, use_container_width=True, hide_index=True)
+    st.dataframe(display, use_container_width=True, height=950, hide_index=True)
 
     csv = display_numeric.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig")
     st.download_button(
