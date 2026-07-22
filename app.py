@@ -251,10 +251,19 @@ def load_portfolio(path: Path, fx_rates: dict[str, float]) -> tuple[pd.DataFrame
         np.nan,
     )
 
-    total_value = raw["Market_Value_DKK"].sum()
+    # Grundfos is shown in the dashboard and included in total portfolio value,
+    # cost and return, but excluded from the portfolio-weight calculation.
+    grundfos_mask = (
+        raw["Name"]
+        .astype("string")
+        .str.contains("grundfos", case=False, na=False)
+    )
+
+    weight_base = raw.loc[~grundfos_mask, "Market_Value_DKK"].sum()
+
     raw["Portfolio_Weight"] = np.where(
-        total_value > 0,
-        raw["Market_Value_DKK"] / total_value,
+        (~grundfos_mask) & (weight_base > 0),
+        raw["Market_Value_DKK"] / weight_base,
         np.nan,
     )
 
@@ -444,7 +453,7 @@ if st.sidebar.button("Genindlæs data", use_container_width=True):
 st.title("📊 Samlet porteføljedashboard")
 st.caption(
     "Markedsværdi og kostpris beregnes som antal × kurs × valutakurs til DKK. "
-    "Afkast og vægt beregnes efter DKK-omregningen."
+    "Afkast beregnes efter DKK-omregningen. Grundfos indgår ikke i porteføljevægtene."
 )
 
 for warning in fx_warnings:
@@ -539,7 +548,7 @@ with overview_tab:
                         alt.Tooltip("Portfolio_Weight:Q", title="Porteføljevægt", format=".0%"),
                     ],
                 )
-                .properties(height=400)
+                .properties(height=420)
             )
             st.altair_chart(chart, use_container_width=True)
 
@@ -561,7 +570,7 @@ with overview_tab:
                         alt.Tooltip("Market_Value_DKK:Q", title="Værdi", format=",.0f"),
                     ],
                 )
-                .properties(height=400)
+                .properties(height=300)
             )
             st.altair_chart(donut, use_container_width=True)
 
@@ -605,13 +614,13 @@ with positions_tab:
     st.subheader("Samlet positionstabel")
 
     display_columns = [
-        "Asset_type", "Name", "Quantity", "Purchase_price", "Current_price",
+        "Asset_type", "Name", "Ticker", "Quantity", "Purchase_price", "Current_price",
         "Currency", "Market_Value_DKK", "Cost_Value_DKK", "Return_DKK", "Return_Pct",
         "Portfolio_Weight", "Sector", "Account",
     ]
     display_numeric = filtered[[column for column in display_columns if column in filtered.columns]].copy()
     display = format_position_table(display_numeric)
-    st.dataframe(display, use_container_width=True, height=1000, hide_index=True)
+    st.dataframe(display, use_container_width=True, hide_index=True)
 
     csv = display_numeric.to_csv(index=False, sep=";", decimal=",").encode("utf-8-sig")
     st.download_button(
@@ -646,7 +655,7 @@ with allocation_tab:
                     alt.Tooltip("Weight:Q", title="Vægt", format=".0%"),
                 ],
             )
-            .properties(height=400)
+            .properties(height=430)
         )
         st.altair_chart(sector_chart, use_container_width=True)
 
@@ -664,7 +673,7 @@ with allocation_tab:
                     alt.Tooltip("Weight:Q", title="Vægt", format=".0%"),
                 ],
             )
-            .properties(height=400)
+            .properties(height=350)
         )
         st.altair_chart(account_chart, use_container_width=True)
 
@@ -740,4 +749,4 @@ with quality_tab:
         st.dataframe(raw_display, use_container_width=True, hide_index=True)
 
 st.divider()
-st.caption("Version 2.0 · Fleksible inkluder/ekskluder-filtre · Datakilde: AI_portfolio.xlsx")
+st.caption("Version 2.1 · Grundfos udeladt af porteføljevægt · Datakilde: AI_portfolio.xlsx")
