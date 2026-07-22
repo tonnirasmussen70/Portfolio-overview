@@ -305,21 +305,35 @@ except Exception as exc:
 # ---------------------------------------------------------
 st.sidebar.header("Filtre")
 
-asset_filter = st.sidebar.radio("Aktivtype", ["Alle", "Stock", "ETF"])
+asset_filter = st.sidebar.radio(
+    "Aktivtype",
+    ["Alle", "Stock", "ETF"],
+    key="asset_type_filter",
+)
 
-account_options = sorted(securities_all["Account"].dropna().unique().tolist())
-selected_accounts = st.sidebar.multiselect("Depot/konto", account_options, default=account_options)
+account_options = sorted(securities_all["Account"].dropna().astype(str).unique().tolist())
+account_filter = st.sidebar.radio(
+    "Depot/konto",
+    ["Alle"] + account_options,
+    key="account_filter",
+)
 
 sector_options = sorted(securities_all["Sector"].dropna().unique().tolist())
-selected_sectors = st.sidebar.multiselect("Sektor", sector_options, default=sector_options)
+selected_sectors = st.sidebar.multiselect(
+    "Sektor",
+    sector_options,
+    default=sector_options,
+)
 
 filtered = securities_all.copy()
+
 if asset_filter != "Alle":
     filtered = filtered[filtered["Asset_type"].eq(asset_filter)]
-filtered = filtered[
-    filtered["Account"].isin(selected_accounts)
-    & filtered["Sector"].isin(selected_sectors)
-]
+
+if account_filter != "Alle":
+    filtered = filtered[filtered["Account"].astype(str).eq(account_filter)]
+
+filtered = filtered[filtered["Sector"].isin(selected_sectors)]
 
 st.sidebar.divider()
 st.sidebar.caption(f"Datakilde: {DATA_FILE.name} · fane: {SHEET_NAME}")
@@ -633,4 +647,4 @@ with quality_tab:
         st.dataframe(raw_display, use_container_width=True, hide_index=True)
 
 st.divider()
-st.caption("Version 1.2 · Ingen afhængighed af gamle beregningskolonner · Datakilde: AI_portfolio.xlsx")
+st.caption("Version 1.3 · Radiofilter for aktivtype og depot/konto · Datakilde: AI_portfolio.xlsx")
