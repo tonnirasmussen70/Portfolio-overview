@@ -539,7 +539,7 @@ with overview_tab:
                         alt.Tooltip("Portfolio_Weight:Q", title="Porteføljevægt", format=".0%"),
                     ],
                 )
-                .properties(height=600)
+                .properties(height=400)
             )
             st.altair_chart(chart, use_container_width=True)
 
